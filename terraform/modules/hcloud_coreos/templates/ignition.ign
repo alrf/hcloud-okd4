@@ -1,7 +1,7 @@
 {
   "ignition": {
     "config": {
-      %{ if ignition_version == "3.0.0" }"merge": [%{ else }"append": [%{ endif }
+      %{ if ignition_version == "3.2.0" }"merge": [%{ else }"append": [%{ endif }
         {
           "source": "${ignition_url}"%{ if ignition_cacert == "" },
           "verification": {}%{ endif }
@@ -23,10 +23,20 @@
   "networkd": {},
   "passwd": {},
   "storage": {
+    "links": [
+      {
+        "overwrite": true,
+        "group": {},
+        "path": "/etc/resolv.conf",
+        "user": {},
+        "target": "/etc/systemd/resolved.conf.d/75-static-dns-servers.conf"
+      }
+    ],
     "files": [
       {
         "filesystem": "root",
         "group": {},
+        "overwrite": true,
         "path": "/etc/hostname",
         "user": {},
         "contents": {
@@ -34,16 +44,12 @@
           "verification": {}
         },
         "mode": 420
-      }
-    ]
-  },
-  "storage": {
-    "files": [
+      },
       {
         "filesystem": "root",
         "group": {},
         "overwrite": true,
-        "path": "/etc/resolv.conf",
+        "path": "/etc/systemd/resolved.conf.d/75-static-dns-servers.conf",
         "user": {},
         "contents": {
           "source": "data:text/plain;charset=utf-8;base64,${resolvconf_b64}",

@@ -1,6 +1,5 @@
 {
   "variables": {
-    "location": "nbg1",
     "server_type": "cx31",
     "snapshot_prefix": "rhcos",
     "image_type": "generic",
@@ -14,10 +13,11 @@
       "server_type": "{{user `server_type`}}",
       "ssh_username": "root",
       "rescue": "linux64",
-      "snapshot_name": "{{user `snapshot_prefix`}}-{{timestamp}}",
+      "snapshot_name": "{{user `snapshot_prefix`}}-{{user `location`}}-{{timestamp}}",
       "snapshot_labels": {
         "os": "rhcos",
         "image_type": "{{user `image_type`}}",
+        "location": "{{user `location`}}",
         "fcos_stream": "{{user `fcos_stream`}}",
         "rhcos_release": "{{user `rhcos_release`}}",
         "rhcos_release_minor": "{{user `rhcos_release_minor`}}"

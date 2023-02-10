@@ -3,14 +3,9 @@ variable "name" {
   description = "Instance nam"
 }
 
-variable "dns_domain" {
+variable "cluster_url" {
   type        = string
-  description = "DNS domain"
-}
-
-variable "dns_zone_id" {
-  description = "Zone ID"
-  default     = null
+  description = "Cluster url"
 }
 
 variable "dns_internal_ip" {
@@ -55,8 +50,7 @@ variable "keep_disk" {
 
 variable "location" {
   type        = string
-  description = "The location name to create the server in. nbg1, fsn1 or hel1"
-  default     = "nbg1"
+  description = "The location name to create the server in."
 }
 
 variable "backups" {
@@ -80,4 +74,12 @@ variable "volume_size" {
 variable "subnet" {
   type        = string
   description = "Id of the additional internal network"
+}
+
+variable "dns_api_token" {
+  type = string
+}
+
+variable "dns_zone_id" {
+  type = string
 }

@@ -1,16 +1,11 @@
 variable "name" {
   type        = string
-  description = "Instance nam"
+  description = "Instance name"
 }
 
-variable "dns_domain" {
+variable "cluster_url" {
   type        = string
-  description = "DNS domain"
-}
-
-variable "dns_zone_id" {
-  description = "Zone ID"
-  default     = null
+  description = "Cluster url"
 }
 
 variable "dns_internal_ip" {
@@ -55,8 +50,7 @@ variable "keep_disk" {
 
 variable "location" {
   type        = string
-  description = "The location name to create the server in. nbg1, fsn1 or hel1"
-  default     = "nbg1"
+  description = "The location name to create the server in."
 }
 
 variable "labels" {
@@ -114,5 +108,13 @@ variable "image_name" {
 variable "ignition_version" {
   type        = string
   description = "Ignition Version"
-  default     = "3.0.0"
+  default     = "3.2.0"
+}
+
+variable "dns_api_token" {
+  type = string
+}
+
+variable "dns_zone_id" {
+  type = string
 }

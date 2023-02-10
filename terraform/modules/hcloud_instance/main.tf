@@ -1,6 +1,6 @@
 resource "hcloud_server" "server" {
   count       = var.instance_count
-  name        = "${format("${var.name}%02d", count.index + 1)}.${var.dns_domain}"
+  name        = "${format("${var.name}%02d", count.index + 1)}.${var.cluster_url}"
   image       = var.image
   server_type = var.server_type
   keep_disk   = var.keep_disk
@@ -13,22 +13,18 @@ resource "hcloud_server" "server" {
   }
 }
 
-resource "cloudflare_record" "dns-a" {
-  count   = var.instance_count
-  zone_id = var.dns_zone_id
-  name    = element(hcloud_server.server.*.name, count.index)
-  value   = element(hcloud_server.server.*.ipv4_address, count.index)
-  type    = "A"
-  ttl     = 120
-}
-
-resource "cloudflare_record" "dns-aaaa" {
-  count   = var.instance_count
-  zone_id = var.dns_zone_id
-  name    = element(hcloud_server.server.*.name, count.index)
-  value   = "${element(hcloud_server.server.*.ipv6_address, count.index)}1"
-  type    = "AAAA"
-  ttl     = 120
+module "hcloud_server_dns_a_records" {
+  count     = var.instance_count
+  source    = "../hcloud_dns"
+  api_token = var.dns_api_token
+  zone_id   = var.dns_zone_id
+  type      = "A"
+  records = {
+    "${element(hcloud_server.server.*.name, count.index)}." = element(hcloud_server.server.*.ipv4_address, count.index)
+  }
+  # depends_on = [
+  #   hcloud_server.server
+  # ]
 }
 
 resource "hcloud_rdns" "dns-ptr-ipv4" {

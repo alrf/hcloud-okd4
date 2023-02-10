@@ -1,9 +1,13 @@
-resource "cloudflare_record" "dns-a" {
-  count   = var.instance_count
-  zone_id = var.dns_zone_id
-  name    = element(hcloud_server.server.*.name, count.index)
-  # value   = var.dns_internal_ip == true ? element(hcloud_server_network.server_network.*.ip, count.index) : element(hcloud_server.server.*.ipv4_address, count.index)
-  value = element(hcloud_server.server.*.ipv4_address, count.index)
-  type  = "A"
-  ttl   = 120
+module "hcloud_server_dns_a_records" {
+  count     = var.instance_count
+  source    = "../hcloud_dns"
+  api_token = var.dns_api_token
+  zone_id   = var.dns_zone_id
+  type      = "A"
+  records = {
+    "${element(hcloud_server.server.*.name, count.index)}." = element(hcloud_server.server.*.ipv4_address, count.index)
+  }
+  # depends_on = [
+  #   hcloud_server.server
+  # ]
 }

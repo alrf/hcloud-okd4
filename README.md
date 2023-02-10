@@ -3,7 +3,8 @@
 
 # hcloud-okd4
 
-Deploy OKD4 (OpenShift) on Hetzner Cloud using Hashicorp Packer, Terraform and Ansible.
+Deploy OKD4 (OpenShift) on Hetzner Cloud using Hashicorp Packer, Terraform, Ansible and Hetzner DNS.
+
 
 ## Current status
 
@@ -22,12 +23,20 @@ The deployment defaults to a single node cluster.
 
 ## Usage
 
+### Set Version
+
+Set a target version of use the targets `latest_version` to fetch the latest available version.
+
+```
+export OPENSHIFT_RELEASE=$(make latest_version)
+```
+
 ### Build toolbox
 
 To ensure that the we have a proper build environment, we create a toolbox container first.
 
 ```
-make fetch
+make fetch ### will download OKD archives
 make build
 ```
 
@@ -43,69 +52,42 @@ make run
 
 All the following commands will be executed inside the container. 
 
-### Set Version
+<!-- ### Set Version
 
 Set a target version of use the targets `latest_version` to fetch the latest available version.
 
 ```
 export OPENSHIFT_RELEASE=$(make latest_version)
 ```
-
-### Create your install-config.yaml
-
-```
----
-apiVersion: v1
-baseDomain: 'example.com'
-metadata:
-  name: 'okd4'
-compute:
-- hyperthreading: Enabled
-  name: worker
-  replicas: 0
-controlPlane:
-  hyperthreading: Enabled
-  name: master
-  replicas: 1
-networking:
-  clusterNetworks:
-  - cidr: 10.128.0.0/14
-    hostPrefix: 23
-  networkType: OpenShiftSDN
-  serviceNetwork:
-  - 172.30.0.0/16
-  machineCIDR:
-platform:
-  none: {}
-pullSecret: '{"auths":{"none":{"auth": "none"}}}'
-sshKey: ssh-rsa AABBCC... Some_Service_User
-```
-
-### Create cluster manifests
-
-```
-make generate_manifests
-```
-
-### Create ignition config
-
-```
-make generate_ignition
-```
+ -->
 
 ### Set required environment variables
 
+Fill out the `terraform/terraform.auto.vars` file with your values:
+
+```
+cluster_name = "okd"
+domain = "example.com"
+# cluster url will be: okd.example.com
+
+dns_api_token = "<HETZNER_DNS_API_TOKEN>"
+
+dns_zone_id = "<HETZNER_DNS_ZONE_ID>"
+
+public_ssh_key = "<YOUR_PUBLIC_SSH_KEY>"
+```
+
+Export HCLOUD_TOKEN variable:
 ```
 # terraform variables
-export TF_VAR_dns_domain=okd4.example.com
-export TF_VAR_dns_zone_id=14758f1afd44c09b7992073ccf00b43d
-
 # credentials for hcloud
-export HCLOUD_TOKEN=14758f1afd44c09b7992073ccf00b43d14758f1afd44c09b7992073ccf00b43d
+export HCLOUD_TOKEN=<YOUR_HCLOUD_TOKEN>
+```
 
-# credentials for cloudflare
-export CLOUDFLARE_EMAIL=user@example.com
-export CLOUDFLARE_API_KEY=14758f1afd44c09b7992073ccf00b43d
+### Create cluster manifests and ignition configs
+
+```
+make generate_okd_configs
 ```
 
 ### Create Fedora CoreOS image
@@ -134,12 +116,6 @@ make wait_bootstrap
 make infrastructure
 ```
 
-### Finish the installation process
-
-```
-make wait_completion
-```
-
 ### Sign Worker CSRs
 
 CSRs of the master nodes get signed by the bootstrap node automaticaly during the cluster bootstrap. CSRs from worker nodes must be signed manually.
@@ -151,6 +127,13 @@ make sign_csr
 ```
 
 This step is not necessary if you set `replicas_worker` to zero.
+
+### Finish the installation process
+
+```
+make wait_completion
+```
+
 
 ## Deployment of OCP
 
@@ -179,10 +162,6 @@ As the Terraform module from Hetzer is currently unable to produce applied rules
 In order to do that, you should visit your Hetzner Web Console and apply the `okd-master` firewall rule to all hosts with the label `okd.io/master: true`, the `okd-base` to the label `okd.io/node: true` and `okd-ingress` to all nodes with the `okd.io/ingress: true` label. Since terraform will ignore firewall changes, this should not interfere with your existing state.
 
 Note: This will keep hosts pingable, but isolate them complete from the internet, making the cluster only reachable through the load balancer. If you require direct SSH access, you can add another rule, that you apply nodes that allows access to port 22.
-
-## Cloudflare API Token
-
-Checkout [this issue](https://github.com/slauger/hcloud-okd4/issues/176) to get details about how to obtain an API token for the Cloudflare API.
 
 ## Author
 

@@ -1,5 +1,5 @@
 resource "hcloud_load_balancer" "lb" {
-  name               = "lb.${var.dns_domain}"
+  name               = "lb.${local.cluster_url}"
   load_balancer_type = "lb11"
   location           = var.location
   dynamic "target" {

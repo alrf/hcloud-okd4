@@ -1,5 +1,5 @@
 resource "hcloud_network" "network" {
-  name     = var.dns_domain
+  name     = local.cluster_url
   ip_range = var.network_cidr
 }
 

@@ -1,12 +1,15 @@
 variable "replicas_master" {
-  type        = number
-  default     = 1
+  type = number
+  #default = 1
+  default     = 3
   description = "Count of master replicas"
 }
 
 variable "replicas_worker" {
-  type        = number
-  default     = 0
+  type = number
+  #default = 0
+  #default = 3
+  default     = 6
   description = "Count of worker replicas"
 }
 
@@ -16,14 +19,14 @@ variable "bootstrap" {
   description = "Whether to deploy a bootstrap instance"
 }
 
-variable "dns_domain" {
+variable "domain" {
   type        = string
-  description = "Name of the Cloudflare domain"
+  description = "Set your DNS domain here"
 }
 
-variable "dns_zone_id" {
+variable "cluster_name" {
   type        = string
-  description = "Zone ID of the Cloudflare domain"
+  description = "Cluster name (it will be <cluster_name>.<domain>)"
 }
 
 variable "ip_loadbalancer_api" {
@@ -61,12 +64,32 @@ variable "lb_subnet_cidr" {
 
 variable "location" {
   type        = string
-  description = "Region"
-  default     = "nbg1"
+  description = "The location name to create the server in. nbg1, fsn1 or hel1"
+  default     = "fsn1"
 }
 
 variable "image" {
   type        = string
   description = "Image selector (either fcos or rhcos)"
   default     = "fcos"
+}
+
+variable "dns_api_token" {
+  type = string
+}
+
+variable "dns_zone_id" {
+  type        = string
+  description = "Hetzner DNS zone_id"
+}
+
+variable "generate_okd_configs" {
+  type        = bool
+  default     = false
+  description = "Whether to generate OKD configs"
+}
+
+variable "public_ssh_key" {
+  type        = string
+  description = "Public ssh key using on Hetzner nodes"
 }
