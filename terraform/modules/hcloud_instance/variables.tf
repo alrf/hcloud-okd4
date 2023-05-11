@@ -28,7 +28,6 @@ variable "server_type" {
 variable "image" {
   type        = string
   description = "Hetzner Cloud system image"
-  default     = "ubuntu-18.04"
 }
 
 variable "user_data" {
@@ -76,10 +75,19 @@ variable "subnet" {
   description = "Id of the additional internal network"
 }
 
-variable "dns_api_token" {
-  type = string
+variable "firewall_ids" {
+  type        = list(number)
+  description = "Assigned firewalls"
+  default     = []
 }
 
-variable "dns_zone_id" {
-  type = string
+variable "dns_record_update" {
+  type        = string
+  description = "DNS record force-update: any string can be passed"
+  default     = ""
+}
+
+variable "delete_protection" {
+  type    = bool
+  default = false
 }

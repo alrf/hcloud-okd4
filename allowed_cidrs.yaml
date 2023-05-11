@@ -1,0 +1,10 @@
+vpn_servers:
+  - 127.0.0.1/32
+
+github_webhooks:
+  - 192.30.252.0/22
+  - 185.199.108.0/22
+  - 140.82.112.0/20
+
+github_selfhosted_runners:
+  - 127.0.0.1/32

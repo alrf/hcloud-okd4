@@ -1,0 +1,70 @@
+name: 📅 OKD4 Certificate renewal
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 3 * * TUE' # at 03:00 every Tuesday
+
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.SA_OKD4_HETZNER_AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.SA_OKD4_HETZNER_AWS_SECRET_ACCESS_KEY }}
+  AWS_DEFAULT_REGION: 'eu-central-1'
+  REGISTRY: "<YOUR_AWS_REGISTRY>.dkr.ecr.eu-central-1.amazonaws.com"
+
+  OPENSHIFT_SERVER: "https://api.os-dev-hz.example.com:6443"
+  OPENSHIFT_TOKEN: ${{ secrets.OKD_TOKEN_EPHEMERAL }}
+
+jobs:
+  renew-certificate:
+    name: Certificate renewal
+    environment: 'aws-dev'
+    runs-on: [ self-hosted, generic ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install tools
+        uses: redhat-actions/openshift-tools-installer@v1
+        with:
+          source: "mirror"
+          oc: '4.8'
+
+      - name: Log in to OpenShift
+        uses: redhat-actions/oc-login@v1
+        with:
+          openshift_server_url: ${{ env.OPENSHIFT_SERVER }}
+          openshift_token: ${{ env.OPENSHIFT_TOKEN }}
+          insecure_skip_tls_verify: true
+
+      - name: Renew certificate
+        run: |
+          DATES=$(oc get secret router-certs-default -n openshift-ingress -o jsonpath={'.data.tls\.crt'} | base64 -d | openssl x509 -noout -dates | xargs)
+          echo "Certificate dates: $DATES"
+          NOTAFTER=$(echo $DATES | awk -F'notAfter=' '{ print $2 }')
+          NOTAFTERDAYS=$((($(date -d "$NOTAFTER" +%s) - $(date +%s))/86400))
+          #NOTAFTERDAYS=$((($(date -d "$NOTAFTER" +%s) - $(date -d "Jul  2 02:03:30 2023 GMT" +%s))/86400))
+          if [[ $NOTAFTERDAYS -lt 31 ]]; then
+            export CLUSTER_DOMAIN=$(echo ${{ env.OPENSHIFT_SERVER }} | cut -d: -f2 | cut -d. -f2-4)
+            export CERTDIR=/.acme.sh/*.${CLUSTER_DOMAIN}_ecc
+            echo "Time to renew certificate for $CLUSTER_DOMAIN"
+
+            echo "-> Installing acme.sh"
+            curl https://raw.githubusercontent.com/acmesh-official/acme.sh/master/acme.sh | sh -s -- --install-online -m your@email.com
+
+            echo "-> Configuring acme.sh dns module"
+            export HETZNER_Token=$(aws secretsmanager get-secret-value --secret-id "hetzner/dns" | jq -r '.SecretString' | jq -r ".api_key")
+
+            echo "-> Issuing SSL Certificate"
+            /.acme.sh/acme.sh --server letsencrypt --ecc --force --issue -d "*.${CLUSTER_DOMAIN}" --dns dns_hetzner
+
+            echo "-> Checking SSL Certificate"
+            openssl x509 -in ${CERTDIR}/*.${CLUSTER_DOMAIN}.cer -dates -noout || exit 1
+
+            echo "-> Installing certificate by default"
+            oc create secret tls router-certs-default --cert=${CERTDIR}/fullchain.cer --key=${CERTDIR}/*.${CLUSTER_DOMAIN}.key -n openshift-ingress --dry-run=client --output yaml | oc replace -f -
+            oc patch deployment/router-default --namespace openshift-ingress --patch "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"last-restart\":\"`date +'%s'`\"}}}}}"
+
+            echo "-> Installing console route certificate"
+            oc create secret tls custom-certificate --cert=${CERTDIR}/fullchain.cer --key=${CERTDIR}/*.${CLUSTER_DOMAIN}.key -n openshift-config --output yaml | oc replace -f -
+          else
+            echo "Certificate is valid for another $NOTAFTERDAYS days, nothing to do"
+          fi

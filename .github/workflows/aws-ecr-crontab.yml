@@ -1,0 +1,53 @@
+name: 📅 OKD4 ECR token
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 */10 * * *' # every 10 hours
+
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.SA_OKD4_HETZNER_AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.SA_OKD4_HETZNER_AWS_SECRET_ACCESS_KEY }}
+  AWS_DEFAULT_REGION: 'eu-central-1'
+  REGISTRY: "<YOUR_AWS_REGISTRY>.dkr.ecr.eu-central-1.amazonaws.com"
+
+  OPENSHIFT_SERVER: "https://api.os-dev-hz.example.com:6443"
+  OPENSHIFT_TOKEN: ${{ secrets.OKD_TOKEN_EPHEMERAL }}
+
+jobs:
+  renew-ecr-token:
+    name: OKD4 ECR token
+    environment: 'aws-dev'
+    runs-on: [ self-hosted, generic ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install tools
+        uses: redhat-actions/openshift-tools-installer@v1
+        with:
+          source: "mirror"
+          oc: '4.8'
+
+      - name: Log in to OpenShift
+        uses: redhat-actions/oc-login@v1
+        with:
+          openshift_server_url: ${{ env.OPENSHIFT_SERVER }}
+          openshift_token: ${{ env.OPENSHIFT_TOKEN }}
+          insecure_skip_tls_verify: true
+
+      - name: Renew ECR token
+        run: |
+          aws ecr describe-registry
+          export DP=$(aws ecr get-login-password)
+          oc create ns eph || true
+          oc create ns minio || true
+          for namespace in $(oc get ns --no-headers=true | grep -Ev 'openshift|kube' | awk '{ print $1 }'); do
+            echo "================="
+            echo "Namespace: $namespace"
+            oc delete secret aws-ecr-creds --ignore-not-found=true -n $namespace
+            oc create secret docker-registry aws-ecr-creds --docker-server=${{ env.REGISTRY }} --docker-username=AWS --docker-password=$DP -n $namespace || true
+            for serviceaccount in $(oc get serviceaccount --no-headers=true -n $namespace | awk '{ print $1 }'); do
+              echo "Patching serviceaccount: $serviceaccount in namespace: $namespace"
+              oc patch serviceaccount $serviceaccount -p '{"imagePullSecrets":[{"name":"aws-ecr-creds"}]}' -n $namespace
+            done
+          done

@@ -12,9 +12,10 @@ DEPLOYMENT_TYPE?=okd
 
 # 4.11.0-0.okd-2022-12-02-145640
 # 4.12.0-0.okd-2023-02-04-212953
-# fixed release version
+# 4.12.0-0.okd-2023-02-04-212953
+# pinned release version
 # OPENSHIFT_RELEASE?=none
-OPENSHIFT_RELEASE?=4.12.0-0.okd-2023-02-04-212953
+OPENSHIFT_RELEASE?=4.12.0-0.okd-2023-04-16-041331
 
 # image name
 CONTAINER_NAME?=quay.io/slauger/hcloud-okd4
@@ -78,69 +79,23 @@ push:
 run:
 	docker run -it --hostname openshift-toolbox --mount type=bind,source="$(shell pwd)",target=/workspace --mount type=bind,source="$(HOME)/.ssh,target=/root/.ssh" $(CONTAINER_NAME):$(CONTAINER_TAG) /bin/bash
 
-.PHONY: generate_okd_configs
-generate_okd_configs:
-	(cd terraform && terraform init && terraform $(MODE) -var generate_okd_configs=true -target=module.installer && cd ..) && \
+.PHONY: generate_configs
+generate_configs:
+	(cd terraform && terraform init && terraform $(MODE) -target=module.installer && cd ..) && \
 	mkdir -p config
 	cp install-config.yaml config/install-config.yaml
 	openshift-install create manifests --dir=config && \
+	sed -i 's|apps.||g' config/manifests/cluster-ingress-02-config.yml && \
 	sleep 10 && \
 	rsync -av config/ ignition && \
 	openshift-install create ignition-configs --dir=ignition
-
-# .PHONY: generate_okd_configs
-# generate_okd_configs:
-# 	(cd terraform && terraform init && terraform $(MODE) -var generate_okd_configs=true -target=module.installer && cd ..) && \
-# 	mkdir -p config
-# 	cp install-config.yaml config/install-config.yaml
-# 	openshift-install create manifests --dir=config && \
-# 	cp okd-configure-master-node-dns.yaml config/manifests/okd-configure-master-node-dns.yaml && \
-# 	cp okd-configure-worker-node-dns.yaml config/manifests/okd-configure-worker-node-dns.yaml && \
-# 	sleep 10 && \
-# 	rsync -av config/ ignition && \
-# 	openshift-install create ignition-configs --dir=ignition && \
-# 	cp ignition/bootstrap.ign ignition/bootstrap-orig.ign && \
-# 	cp ignition/master.ign ignition/master-orig.ign && \
-# 	cp ignition/worker.ign ignition/worker-orig.ign && \
-# 	jq --slurpfile other dns.json '.storage.files += $$other[].storage.files | .storage.links += $$other[].storage.links' ignition/bootstrap-orig.ign > ignition/bootstrap.ign && \
-# 	jq '. * input' dns.json ignition/master-orig.ign > ignition/master.ign && \
-# 	jq '. * input' dns.json ignition/worker-orig.ign > ignition/worker.ign && \
-# 	rm -f ignition/*-orig.ign
-
-# .PHONY: generate_okd_configs
-# generate_okd_configs:
-# 	(cd terraform && terraform init && terraform $(MODE) -var generate_okd_configs=true -target=module.installer && cd ..) && \
-# 	mkdir -p config
-# 	cp install-config.yaml config/install-config.yaml
-# 	openshift-install create manifests --dir=config && \
-# 	sleep 10 && \
-# 	rsync -av config/ ignition && \
-# 	openshift-install create ignition-configs --dir=ignition && \
-# 	cp ignition/bootstrap.ign ignition/bootstrap-orig.ign && \
-# 	cp ignition/master.ign ignition/master-orig.ign && \
-# 	cp ignition/worker.ign ignition/worker-orig.ign && \
-# 	jq --slurpfile other dns.json '.storage.files += $$other[].storage.files | .storage.links += $$other[].storage.links' ignition/bootstrap-orig.ign > ignition/bootstrap.ign && \
-# 	jq '. * input' dns.json ignition/master-orig.ign > ignition/master.ign && \
-# 	jq '. * input' dns.json ignition/worker-orig.ign > ignition/worker.ign && \
-# 	rm -f ignition/*-orig.ign
-
-# .PHONY: generate_manifests
-# generate_manifests:
-# 	mkdir -p config
-# 	cp install-config.yaml config/install-config.yaml
-# 	openshift-install create manifests --dir=config
-
-# .PHONY: generate_ignition
-# generate_ignition:
-# 	rsync -av config/ ignition
-# 	openshift-install create ignition-configs --dir=ignition
 
 .PHONY: hcloud_image
 hcloud_image:
 	@if [ -z "$(HCLOUD_TOKEN)" ]; then echo "ERROR: HCLOUD_TOKEN is not set"; exit 1; fi
 	@if [ -z "$(IMAGE_LOCATION)" ]; then echo "ERROR: IMAGE_LOCATION can't be determined"; exit 1; fi
-	if [ "$(DEPLOYMENT_TYPE)" == "okd" ]; then (cd packer && packer build -var location=$(IMAGE_LOCATION) -var fcos_url=$(shell openshift-install coreos print-stream-json | jq -r '.architectures.x86_64.artifacts.qemu.formats."qcow2.xz".disk.location') hcloud-fcos.json); fi
-	if [ "$(DEPLOYMENT_TYPE)" == "ocp" ]; then (cd packer && packer build -var location=$(IMAGE_LOCATION) -var rhcos_url=$(shell openshift-install coreos print-stream-json | jq -r '.architectures.x86_64.artifacts.qemu.formats."qcow2.gz".disk.location') hcloud-rhcos.json); fi
+	if [ "$(DEPLOYMENT_TYPE)" == "okd" ]; then (cd packer && packer build -var location=$(IMAGE_LOCATION) -var fcos_url=$(shell openshift-install coreos print-stream-json | jq -r '.architectures.x86_64.artifacts.qemu.formats."qcow2.xz".disk.location') -var fcos_release=$(shell openshift-install coreos print-stream-json | jq -r '.architectures.x86_64.artifacts.qemu.release') hcloud-fcos.json); fi
+	if [ "$(DEPLOYMENT_TYPE)" == "ocp" ]; then (cd packer && packer build -var location=$(IMAGE_LOCATION) -var rhcos_url=$(shell openshift-install coreos print-stream-json | jq -r '.architectures.x86_64.artifacts.qemu.formats."qcow2.gz".disk.location') -var rhcos_release=$(shell openshift-install coreos print-stream-json | jq -r '.architectures.x86_64.artifacts.qemu.release') hcloud-rhcos.json); fi
 
 .PHONY: sign_csr
 sign_csr:
@@ -148,7 +103,7 @@ sign_csr:
 	bash -c "export KUBECONFIG=$(shell pwd)/ignition/auth/kubeconfig; oc get csr -o name | xargs oc adm certificate approve || true"
 
 .PHONY: wait_bootstrap
-wait_bootstrap:
+wait_bootstrap: sign_csr
 	openshift-install --dir=ignition/ wait-for bootstrap-complete --log-level=debug
 
 .PHONY: wait_completion
@@ -158,10 +113,24 @@ wait_completion:
 .PHONY: infrastructure
 infrastructure:
 	@if [ -z "$(HCLOUD_TOKEN)" ]; then echo "ERROR: HCLOUD_TOKEN is not set"; exit 1; fi
-	(cd terraform && terraform init && terraform $(MODE) -var image=$(COREOS_IMAGE) -var bootstrap=$(BOOTSTRAP) -var generate_okd_configs=true)
+	(cd terraform && terraform init && terraform $(MODE) -var image=$(COREOS_IMAGE) -var bootstrap=$(BOOTSTRAP))
 	if [ "$(MODE)" == "apply" ]; then (cd ansible && ansible-playbook site.yml); fi
 
 .PHONY: destroy
 destroy:
 	(cd terraform && terraform init && terraform destroy)
 	(cd /workspace && rm -Rf config ignition install-config.yaml)
+
+.PHONY: destroy_configs
+destroy_configs:
+	(cd terraform && terraform init && terraform destroy -target=module.installer)
+	(cd /workspace && rm -Rf config ignition install-config.yaml)
+
+.PHONY: postinstall
+postinstall:
+	(cd terraform && terraform init && terraform $(MODE) -target=module.installer -var postinstall=true)
+
+.PHONY: get_ephemeral_token
+get_ephemeral_token:
+	@if [ ! -f "ignition/auth/kubeconfig" ]; then echo "ERROR: ignition/auth/kubeconfig not found"; exit 1; fi
+	bash -c "export KUBECONFIG=$(shell pwd)/ignition/auth/kubeconfig; oc describe secret $(shell oc describe sa ephemeral-sa -n default | grep Tokens | cut -d: -f2 | xargs) -n default | grep 'token:' | cut -d: -f2 | xargs"

@@ -1,12 +1,8 @@
 terraform {
   required_providers {
-    cloudflare = {
-      source  = "cloudflare/cloudflare"
-      version = "2.27.0"
-    }
     hcloud = {
       source  = "hetznercloud/hcloud"
-      version = "1.35.2"
+      version = "1.38.2"
     }
     template = {
       source  = "hashicorp/template"
@@ -19,6 +15,14 @@ terraform {
     random = {
       source  = "hashicorp/random"
       version = "3.4.3"
+    }
+    aws = {
+      source  = "hashicorp/aws"
+      version = "4.54.0"
+    }
+    null = {
+      source  = "hashicorp/null"
+      version = "3.2.1"
     }
   }
   required_version = ">= 0.14"

@@ -1,12 +1,21 @@
-resource "null_resource" "create_a_record" {
+data "aws_secretsmanager_secret" "hetzner_dns" {
+  name = "hetzner/dns"
+}
+
+data "aws_secretsmanager_secret_version" "hetzner_dns" {
+  secret_id = data.aws_secretsmanager_secret.hetzner_dns.id
+}
+
+resource "null_resource" "create_record" {
   triggers = {
     ## to always update resource
     #build_number  = timestamp()
-    api_url   = local.api_url
-    zone_id   = var.zone_id
-    api_token = var.api_token
+    build_number = var.force_update == "" ? 1 : var.force_update
+    api_url      = jsondecode(data.aws_secretsmanager_secret_version.hetzner_dns.secret_string)["api_url"]
+    zone_id      = jsondecode(data.aws_secretsmanager_secret_version.hetzner_dns.secret_string)["zone_id"]
+    api_token    = jsondecode(data.aws_secretsmanager_secret_version.hetzner_dns.secret_string)["api_key"]
   }
-  for_each = var.type == "A" ? var.records : {}
+  for_each = contains(["A", "CNAME"], var.type) ? var.records : {}
 
   # create record
   provisioner "local-exec" {
@@ -15,7 +24,7 @@ curl -s "${self.triggers.api_url}?zone_id=${self.triggers.zone_id}" -H "Auth-API
 curl -s -X "POST" "${self.triggers.api_url}" -H "Auth-API-Token: ${self.triggers.api_token}" -d $'{
   "value": "${each.value}",
   "ttl": 60,
-  "type": "A",
+  "type": "${var.type}",
   "name": "${each.key}",
   "zone_id": "${self.triggers.zone_id}"
 }'
@@ -23,7 +32,6 @@ EOF
     interpreter = ["/usr/bin/env", "bash", "-c"]
   }
 
-  #[[ ! -z "$var" ]] && echo "Not empty" || echo "Empty"
   # delete record on destroy
   provisioner "local-exec" {
     when        = destroy

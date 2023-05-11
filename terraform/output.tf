@@ -10,3 +10,6 @@ output "master" {
 output "worker" {
   value = module.worker
 }
+output "lb" {
+  value = module.lb
+}

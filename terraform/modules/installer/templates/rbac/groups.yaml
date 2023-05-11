@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: List
+items:
+- apiVersion: user.openshift.io/v1
+  kind: Group
+  metadata:
+    name: itops
+  users:
+  - alrf
+- apiVersion: user.openshift.io/v1
+  kind: Group
+  metadata:
+    name: backend
+  users:
+  - alrf
+- apiVersion: user.openshift.io/v1
+  kind: Group
+  metadata:
+    name: web
+  users:
+  - alrf
+- apiVersion: user.openshift.io/v1
+  kind: Group
+  metadata:
+    name: dwh
+  users:
+  - alrf

@@ -8,7 +8,6 @@ variable "replicas_master" {
 variable "replicas_worker" {
   type = number
   #default = 0
-  #default = 3
   default     = 6
   description = "Count of worker replicas"
 }
@@ -74,22 +73,17 @@ variable "image" {
   default     = "fcos"
 }
 
-variable "dns_api_token" {
+variable "aws_region" {
+  type        = string
+  default     = "eu-central-1"
+  description = "AWS region"
+}
+
+variable "postinstall" {
+  type    = bool
+  default = false
+}
+
+variable "HCLOUD_TOKEN" {
   type = string
-}
-
-variable "dns_zone_id" {
-  type        = string
-  description = "Hetzner DNS zone_id"
-}
-
-variable "generate_okd_configs" {
-  type        = bool
-  default     = false
-  description = "Whether to generate OKD configs"
-}
-
-variable "public_ssh_key" {
-  type        = string
-  description = "Public ssh key using on Hetzner nodes"
 }

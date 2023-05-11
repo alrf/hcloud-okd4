@@ -3,6 +3,7 @@
     "server_type": "cx21",
     "snapshot_prefix": "fcos",
     "image_type": "generic",
+    "fcos_stream": "stable",
     "ignition_config": "config-3.2.0.ign"
   },
   "builders": [
@@ -42,7 +43,7 @@
     },
     {
       "type": "file",
-      "content": "[connection]\nid=eth\ntype=ethernet\nautoconnect-priority=-999\n[ipv4]\ndns=8.8.8.8;1.1.1.1;\nignore-auto-dns=true\nmethod=auto\n[ipv6]\naddr-gen-mode=stable-privacy\nmethod=auto\n[ethernet]\n[proxy]\n",
+      "content": "[connection]\nid=eth\ntype=ethernet\nautoconnect-priority=-999\n[ipv4]\ndns=8.8.8.8\nignore-auto-dns=true\nmethod=auto\n[ipv6]\naddr-gen-mode=stable-privacy\nmethod=auto\n[ethernet]\n[proxy]\n",
       "destination": "/target/coreos-firstboot-network/eth.nmconnection"
     },
     {

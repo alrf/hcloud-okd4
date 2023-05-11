@@ -111,10 +111,7 @@ variable "ignition_version" {
   default     = "3.2.0"
 }
 
-variable "dns_api_token" {
-  type = string
-}
-
-variable "dns_zone_id" {
-  type = string
+variable "delete_protection" {
+  type    = bool
+  default = false
 }
