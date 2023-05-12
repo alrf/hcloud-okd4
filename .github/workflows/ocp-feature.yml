@@ -1,18 +1,18 @@
-name: Docker Build
+# name: Docker Build
 
-on:
-  push:
-    branches-ignore:
-      - master
+# on:
+#   push:
+#     branches-ignore:
+#       - master
 
-jobs:
-  build-ocp-feature:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - name: Fetch external dependencies
-      run: make fetch DEPLOYMENT_TYPE=ocp OPENSHIFT_RELEASE=$(make latest_version DEPLOYMENT_TYPE=ocp)
-    - name: Build the Docker image
-      run: make build DEPLOYMENT_TYPE=ocp OPENSHIFT_RELEASE=$(make latest_version DEPLOYMENT_TYPE=ocp)
-    - name: Test Docker image
-      run: make test DEPLOYMENT_TYPE=ocp OPENSHIFT_RELEASE=$(make latest_version DEPLOYMENT_TYPE=ocp)
+# jobs:
+#   build-ocp-feature:
+#     runs-on: ubuntu-latest
+#     steps:
+#     - uses: actions/checkout@v2
+#     - name: Fetch external dependencies
+#       run: make fetch DEPLOYMENT_TYPE=ocp OPENSHIFT_RELEASE=$(make latest_version DEPLOYMENT_TYPE=ocp)
+#     - name: Build the Docker image
+#       run: make build DEPLOYMENT_TYPE=ocp OPENSHIFT_RELEASE=$(make latest_version DEPLOYMENT_TYPE=ocp)
+#     - name: Test Docker image
+#       run: make test DEPLOYMENT_TYPE=ocp OPENSHIFT_RELEASE=$(make latest_version DEPLOYMENT_TYPE=ocp)

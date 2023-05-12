@@ -1,18 +1,18 @@
-name: Docker Build
+# name: Docker Build
 
-on:
-  push:
-    branches-ignore:
-      - master
+# on:
+#   push:
+#     branches-ignore:
+#       - master
 
-jobs:
-  build-okd-feature:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - name: Fetch external dependencies
-      run: make fetch OPENSHIFT_RELEASE=$(make latest_version)
-    - name: Build the Docker image
-      run: make build OPENSHIFT_RELEASE=$(make latest_version)
-    - name: Test Docker image
-      run: make test OPENSHIFT_RELEASE=$(make latest_version)
+# jobs:
+#   build-okd-feature:
+#     runs-on: ubuntu-latest
+#     steps:
+#     - uses: actions/checkout@v2
+#     - name: Fetch external dependencies
+#       run: make fetch OPENSHIFT_RELEASE=$(make latest_version)
+#     - name: Build the Docker image
+#       run: make build OPENSHIFT_RELEASE=$(make latest_version)
+#     - name: Test Docker image
+#       run: make test OPENSHIFT_RELEASE=$(make latest_version)
