@@ -1,8 +1,8 @@
 name: 📅 OKD4 Certificate renewal
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 3 * * TUE' # at 03:00 every Tuesday
+  # schedule:
+  #   - cron: '0 3 * * TUE' # at 03:00 every Tuesday
 
 env:
   AWS_ACCESS_KEY_ID: ${{ secrets.SA_OKD4_HETZNER_AWS_ACCESS_KEY_ID }}
